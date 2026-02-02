@@ -174,27 +174,80 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
         st.plotly_chart(figB_box, use_container_width=True)
 
     with tab2:
-        st.subheader("실험 A (Beeswarm): 가격 변동 상/하위 → 거래량 증가율")
-        figA_swarm = px.strip(
-            A_df,
-            x="group",
-            y="trade_count_growth",
-            hover_data=hover_cols,
-            title="실험 A (Beeswarm)"
-        )
-        figA_swarm.update_traces(jitter=0.35)
-        st.plotly_chart(figA_swarm, use_container_width=True)
+    st.subheader("실험 A: 가격 변동 조건 하 거래량 변화 (Slope chart)")
+    st.caption(
+        "가격 변동 상·하위 그룹으로 통제한 뒤, 각 구의 거래건수가 "
+        "2023→2025 동안 어떤 방향으로 이동했는지 시각적으로 비교"
+    )
 
-        st.subheader("실험 B (Beeswarm): 거래량 변동 상/하위 → 가격 상승률")
-        figB_swarm = px.strip(
-            B_df,
-            x="group",
-            y="price_growth",
-            hover_data=hover_cols,
-            title="실험 B (Beeswarm)"
-        )
-        figB_swarm.update_traces(jitter=0.35)
-        st.plotly_chart(figB_swarm, use_container_width=True)
+    # -----------------------------
+    # 1) 가격 변동 상·하위 그룹 정의
+    # -----------------------------
+    p_hi = df["price_growth"].quantile(0.7)
+    p_lo = df["price_growth"].quantile(0.3)
+
+    df_A = df[
+        (df["price_growth"] >= p_hi) | (df["price_growth"] <= p_lo)
+    ].copy()
+
+    df_A["price_group"] = np.where(
+        df_A["price_growth"] >= p_hi,
+        "가격 변동 상위",
+        "가격 변동 하위"
+    )
+
+    # -----------------------------
+    # 2) Slope chart용 long format
+    # -----------------------------
+    df_long = pd.concat([
+        df_A[["구명", "price_group"]].assign(
+            year="2023",
+            trade_count=df_A["trade_count_2023"]
+        ),
+        df_A[["구명", "price_group"]].assign(
+            year="2025",
+            trade_count=df_A["trade_count_2025"]
+        ),
+    ])
+
+    # -----------------------------
+    # 3) Slope chart
+    # -----------------------------
+    fig_slope = px.line(
+        df_long,
+        x="year",
+        y="trade_count",
+        color="price_group",
+        line_group="구명",
+        markers=True,
+        hover_name="구명",
+        labels={
+            "year": "연도",
+            "trade_count": "거래건수",
+            "price_group": "가격 변동 그룹",
+        },
+    )
+
+    fig_slope.update_layout(
+        title="가격 변동 상·하위 그룹별 거래건수 변화 (2023 → 2025)",
+        yaxis_title="거래건수",
+        xaxis=dict(type="category"),
+        legend_title_text="가격 변동 그룹",
+    )
+
+    st.plotly_chart(fig_slope, use_container_width=True)
+
+    # -----------------------------
+    # 4) 해석 가이드 (리포트용)
+    # -----------------------------
+    st.markdown(
+        """
+        **해석 포인트**
+        - 가격 변동 상위 그룹에서 다수의 구가 거래건수 증가 방향으로 이동
+        - 하위 그룹은 증가폭이 작거나 혼재된 양상
+        - → *가격 변화가 선행된 지역에서 거래량이 후행적으로 반응했을 가능성* 시사
+        """
+    )
 
     with tab3:
         c1, c2 = st.columns(2)
