@@ -47,7 +47,7 @@ fig2 = px.scatter(
 fig2.update_traces(textposition="top center")
 
 # --- (E) Streamlit에 출력 ---
-st.subheader("가격 상승률 vs 거래건수 증가율")
+st.subheader("가격 상승률 vs 거래건수 증가율(절대지표)")
 st.caption(f"거래 비중(상대지표)의 한계를 보완하기 위해 절대 거래량(거래건수) 기준의 관계를 추가 확인 | 상관계수 r = {corr2:.2f}")
 st.plotly_chart(fig2, use_container_width=True)
 
