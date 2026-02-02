@@ -107,7 +107,7 @@ st.plotly_chart(fig_box, use_container_width=True)
 st.divider()
 
 # -----------------------------
-# 3) 추가분석: Lead–Lag (실험 A/B) + Boxplot + Beeswarm + p-value
+# 3) 추가분석: Lead–Lag (실험 A/B) + Boxplot + Slope chart + p-value
 # -----------------------------
 with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 비교, 실험 A/B)", expanded=True):
     st.caption(
@@ -148,7 +148,7 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
         "trade_count_2023", "trade_count_2025", "trade_count_growth",
     ] if c in exp_df.columns]
 
-    tab1, tab2, tab3 = st.tabs(["Boxplot", "Beeswarm", "Stats"])
+    tab1, tab2, tab3 = st.tabs(["Boxplot", "Slope chart", "Stats"])
 
     with tab1:
         st.subheader("실험 A: 가격 변동 상/하위 → 거래량 증가율")
