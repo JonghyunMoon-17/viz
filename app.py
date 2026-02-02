@@ -180,19 +180,9 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
             x="group",
             y="trade_count_growth",
             hover_data=hover_cols,
-            jitter=0.35,
             title="실험 A (Beeswarm)"
         )
-        figA_swarm.add_hline(
-            y=A_high["trade_count_growth"].median(),
-            line_dash="dash",
-            annotation_text=f"상위 중앙값={A_high['trade_count_growth'].median():.2f}"
-        )
-        figA_swarm.add_hline(
-            y=A_low["trade_count_growth"].median(),
-            line_dash="dash",
-            annotation_text=f"하위 중앙값={A_low['trade_count_growth'].median():.2f}"
-        )
+        figA_swarm.update_traces(jitter=0.35)
         st.plotly_chart(figA_swarm, use_container_width=True)
 
         st.subheader("실험 B (Beeswarm): 거래량 변동 상/하위 → 가격 상승률")
@@ -201,19 +191,9 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
             x="group",
             y="price_growth",
             hover_data=hover_cols,
-            jitter=0.35,
             title="실험 B (Beeswarm)"
         )
-        figB_swarm.add_hline(
-            y=B_high["price_growth"].median(),
-            line_dash="dash",
-            annotation_text=f"상위 중앙값={B_high['price_growth'].median():.2f}"
-        )
-        figB_swarm.add_hline(
-            y=B_low["price_growth"].median(),
-            line_dash="dash",
-            annotation_text=f"하위 중앙값={B_low['price_growth'].median():.2f}"
-        )
+        figB_swarm.update_traces(jitter=0.35)
         st.plotly_chart(figB_swarm, use_container_width=True)
 
     with tab3:
