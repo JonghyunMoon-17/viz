@@ -174,90 +174,83 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
         st.plotly_chart(figB_box, use_container_width=True)
 
     with tab2:
-        st.subheader("실험 A: 가격 변동 조건 하 거래량 변화 (증가율 기반 Slope chart)")
+        st.subheader("실험 A: 가격 변동 상·하위 그룹의 평균 거래지수 변화 (2023=1)")
         st.caption(
-            "절대 거래건수는 구별 규모 차이가 커서 비교가 어려움 → 2023을 기준(=1)으로 정규화해 "
-            "2025에서 얼마나 증가/감소했는지(증가율)를 비교"
+            "개별 구의 절대 규모 차이를 제거하기 위해 2023=1로 정규화한 뒤, "
+            "가격 변동 상·하위 그룹의 평균적인 거래량 반응(거래지수)을 비교"
         )
     
         # 0) 안전장치
         df_base = df[df["trade_count_2023"] > 0].copy()
     
-        # 1) 가격 변동 상·하위 그룹 정의 (상위 30%, 하위 30%)
+        # 1) 가격 변동 상·하위 그룹 (상위 30%, 하위 30%)
         p_hi = df_base["price_growth"].quantile(0.7)
         p_lo = df_base["price_growth"].quantile(0.3)
     
         df_A = df_base[(df_base["price_growth"] >= p_hi) | (df_base["price_growth"] <= p_lo)].copy()
         df_A["price_group"] = np.where(df_A["price_growth"] >= p_hi, "가격 변동 상위", "가격 변동 하위")
     
-        # 2) 정규화 지표: 2023=1, 2025=trade_count_2025 / trade_count_2023
-        df_A["trade_index_2023"] = 1.0
+        # 2) 거래지수(정규화): 2023=1, 2025 = trade_count_2025 / trade_count_2023
         df_A["trade_index_2025"] = df_A["trade_count_2025"] / df_A["trade_count_2023"]
     
-        # 3) long format 변환
-        df_long = pd.concat([
-            df_A[["구명", "price_group", "trade_index_2023"]].rename(columns={"trade_index_2023": "trade_index"}).assign(year="2023"),
-            df_A[["구명", "price_group", "trade_index_2025"]].rename(columns={"trade_index_2025": "trade_index"}).assign(year="2025"),
-        ], ignore_index=True)
-    
-        # 4) 라벨 최소화(선택): 상위/하위에서 trade_index_2025 극단값만 라벨
-        top = df_A.nlargest(3, "trade_index_2025")["구명"].tolist()
-        bot = df_A.nsmallest(3, "trade_index_2025")["구명"].tolist()
-        label_set = set(top + bot)
-    
-        df_long["label"] = np.where(
-            (df_long["year"] == "2025") & (df_long["구명"].isin(label_set)),
-            df_long["구명"],
-            ""
+        # 3) 그룹 평균(또는 중앙값) 계산: 평균이 튀면 median으로 바꿔도 됨
+        grp = (
+            df_A.groupby("price_group")["trade_index_2025"]
+            .agg(["mean", "median", "count"])
+            .reset_index()
         )
     
-        # 5) Slope chart
-        fig = px.line(
-            df_long,
+        # 4) Slope chart 데이터(2023=1 → 2025=그룹 평균)
+        slope_df = pd.concat([
+            grp[["price_group", "count"]].assign(year="2023", trade_index=1.0),
+            grp[["price_group", "count"]].assign(year="2025", trade_index=grp["mean"].values),   # 여기 mean → median 가능
+        ], ignore_index=True)
+    
+        # 5) 그래프 (2개 선만)
+        fig_mean = px.line(
+            slope_df,
             x="year",
             y="trade_index",
             color="price_group",
-            line_group="구명",
             markers=True,
-            text="label",
-            hover_name="구명",
-            hover_data={
-                "price_group": True,
-                "trade_index": ":.2f",
-                "year": True,
-            },
+            line_group="price_group",
+            hover_data={"count": True, "trade_index": ":.2f", "year": True},
             labels={
                 "year": "연도",
-                "trade_index": "거래지수 (2023=1 기준)",
+                "trade_index": "평균 거래지수 (2023=1)",
                 "price_group": "가격 변동 그룹",
+                "count": "구 개수",
             },
-            title="가격 변동 상·하위 그룹별 거래지수 변화 (2023=1 → 2025)"
+            title="가격 변동 상·하위 그룹의 평균 거래지수 변화 (2023=1 → 2025)"
         )
     
-        fig.update_traces(textposition="top center")
-        fig.update_layout(xaxis=dict(type="category"))
+        fig_mean.update_layout(xaxis=dict(type="category"))
+        fig_mean.add_hline(y=1.0, line_dash="dot", opacity=0.6)
     
-        # 기준선(=1) 표시: 2023 기준선
-        fig.add_hline(y=1.0, line_dash="dot", opacity=0.6)
-    
-        st.plotly_chart(fig, use_container_width=True)
-    
-        # 6) 빠른 요약 숫자(집단 비교를 더 명확하게)
-        summary = (
-            df_A.groupby("price_group")["trade_index_2025"]
-            .agg(["count", "median", "mean"])
-            .reset_index()
-            .sort_values("price_group")
+        # 6) 2025 값 라벨(선 끝에 숫자 표시)
+        end_2025 = slope_df[slope_df["year"] == "2025"].copy()
+        fig_mean.add_scatter(
+            x=end_2025["year"],
+            y=end_2025["trade_index"],
+            mode="text",
+            text=[f"{v:.2f}" for v in end_2025["trade_index"]],
+            textposition="top center",
+            showlegend=False,
+            hoverinfo="skip",
         )
-        st.markdown("#### 그룹별 2025 거래지수 요약 (2023=1 기준)")
-        st.dataframe(summary, use_container_width=True)
+    
+        st.plotly_chart(fig_mean, use_container_width=True)
+    
+        # 7) 숫자 요약(리포트용)
+        st.markdown("#### 그룹별 요약 (2025 거래지수)")
+        st.dataframe(grp, use_container_width=True)
     
         st.markdown(
             """
             **해석 포인트**
-            - y축이 '거래지수(2023=1)'라서 구별 규모 차이를 제거한 상태에서 증가 폭을 직접 비교 가능  
-            - 가격 변동 **상위 그룹**의 선들이 더 자주/더 크게 1 위로 올라가면 → *가격 선행 → 거래량 후행* 가설 강화  
-            - 반대로 두 그룹이 비슷하면 → *가격-수요 상호작용(되먹임)* 가능성
+            - 2023=1 기준에서 2025 평균 거래지수가 더 큰 그룹이, 평균적으로 거래량 반응(증가율)이 더 큼  
+            - 가격 변동 **상위** 그룹의 2025 거래지수가 더 크면 → *가격 선행 → 거래량 후행* 가설을 지지  
+            - 두 그룹이 유사하면 → *되먹임(상호강화) 또는 외생 요인* 가능성
             """
         )
 
