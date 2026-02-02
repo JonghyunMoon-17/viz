@@ -203,7 +203,7 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
         # 4) Slope chart 데이터(2023=1 → 2025=그룹 평균)
         slope_df = pd.concat([
             grp[["price_group", "count"]].assign(year="2023", trade_index=1.0),
-            grp[["price_group", "count"]].assign(year="2025", trade_index=grp["mean"].values),   # 여기 mean → median 가능
+            grp[["price_group", "count"]].assign(year="2025", trade_index=grp["median"].values),   # 여기 mean → median 가능
         ], ignore_index=True)
     
         # 5) 그래프 (2개 선만)
