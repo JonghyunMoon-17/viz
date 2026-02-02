@@ -13,7 +13,7 @@ st.set_page_config(layout="wide")
 def load_summary(path: str = "district_summary.csv") -> pd.DataFrame:
     df = pd.read_csv(path)
     df = df.replace([np.inf, -np.inf], np.nan)
-    # 실험에 필요한 최소 컬럼은 결측 제거
+    # 분석에 필요한 최소 컬럼은 결측 제거
     need = ["구명", "price_growth", "trade_share_change", "trade_count_2023", "trade_count_2025"]
     for c in need:
         if c not in df.columns:
@@ -107,9 +107,9 @@ st.plotly_chart(fig_box, use_container_width=True)
 st.divider()
 
 # -----------------------------
-# 3) 추가분석: Lead–Lag (실험 A/B) + Boxplot + Slope chart + p-value
+# 3) 추가분석: Lead–Lag (분석 A/B) + Boxplot + Slope chart + p-value
 # -----------------------------
-with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 비교, 실험 A/B)", expanded=True):
+with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 비교, 분석 A/B)", expanded=True):
     st.caption(
         "방법: 상/하위 분위수로 지역을 구분(중간 구간 제외)한 뒤 분포 차이를 비교합니다. "
         "비모수(Mann–Whitney U) 검정의 p-value로 유의성을 보강합니다."
@@ -151,30 +151,30 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
     tab1, tab2, tab3 = st.tabs(["Boxplot", "Slope chart", "Stats"])
 
     with tab1:
-        st.subheader("실험 A: 가격 변동 상/하위 → 거래량 증가율")
+        st.subheader("분석 A: 가격 변동 상/하위 → 거래량 증가율")
         figA_box = px.box(
             A_df,
             x="group",
             y="trade_count_growth",
             points="all",
             hover_data=hover_cols,
-            title="실험 A (Boxplot)"
+            title="분석 A (Boxplot)"
         )
         st.plotly_chart(figA_box, use_container_width=True)
 
-        st.subheader("실험 B: 거래량 변동 상/하위 → 가격 상승률")
+        st.subheader("분석 B: 거래량 변동 상/하위 → 가격 상승률")
         figB_box = px.box(
             B_df,
             x="group",
             y="price_growth",
             points="all",
             hover_data=hover_cols,
-            title="실험 B (Boxplot)"
+            title="분석 B (Boxplot)"
         )
         st.plotly_chart(figB_box, use_container_width=True)
 
     with tab2:
-        st.subheader("실험 A: 가격 변동 상·하위 그룹의 평균 거래지수 변화 (2023=1)")
+        st.subheader("분석 A: 가격 변동 상·하위 그룹의 평균 거래지수 변화 (2023=1)")
         st.caption(
             "개별 구의 절대 규모 차이를 제거하기 위해 2023=1로 정규화한 뒤, "
             "가격 변동 상·하위 그룹의 평균적인 거래량 반응(거래지수)을 비교"
@@ -256,18 +256,18 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
 
     with tab3:
         c1, c2 = st.columns(2)
-        c1.metric("p-value (실험 A)", f"{pA:.3f}")
-        c2.metric("p-value (실험 B)", f"{pB:.3f}")
+        c1.metric("p-value (분석 A)", f"{pA:.3f}")
+        c2.metric("p-value (분석 B)", f"{pB:.3f}")
 
         # 자동 해석 카드
         if pA < 0.05 and pB >= 0.05:
-            st.success("해석: 실험 A는 유의, 실험 B는 비유의 → 가격 선행 가능성 시사")
+            st.success("해석: 분석 A는 유의, 분석 B는 비유의 → 가격 선행 가능성 시사")
         elif pA < 0.05 and pB < 0.05:
-            st.info("해석: 두 실험 모두 유의 → 상호강화(되먹임) 가능성")
+            st.info("해석: 두 분석 모두 유의 → 상호강화(되먹임) 가능성")
         elif pA >= 0.05 and pB < 0.05:
-            st.warning("해석: 실험 B만 유의 → 수요(거래량) 선행 가능성")
+            st.warning("해석: 분석 B만 유의 → 수요(거래량) 선행 가능성")
         else:
-            st.error("해석: 두 실험 모두 비유의 → 외생 요인/표본/기간 영향 가능성")
+            st.error("해석: 두 분석 모두 비유의 → 외생 요인/표본/기간 영향 가능성")
 
         st.caption(
             "※ 비모수(Mann–Whitney U) 검정 기반. 인과를 단정하지 않고 선행 가능성을 시사하는 수준으로 해석."
