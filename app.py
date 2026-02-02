@@ -111,8 +111,8 @@ st.divider()
 # -----------------------------
 with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 비교, 분석 A/B)", expanded=True):
     st.caption(
-        "방법: 상/하위 분위수로 지역을 구분(중간 구간 제외)한 뒤 분포 차이를 비교합니다. "
-        "비모수(Mann–Whitney U) 검정의 p-value로 유의성을 보강합니다."
+        "방법: 상/하위 분위수로 지역을 구분(중간 구간 제외)한 뒤 분포 차이를 비교. "
+        "비모수(Mann–Whitney U) 검정의 p-value로 유의성을 보강."
     )
 
     q = st.slider("상/하위 분위수 기준(q)", 0.60, 0.85, 0.70, 0.05)
@@ -174,7 +174,7 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
         st.plotly_chart(figB_box, use_container_width=True)
 
     with tab2:
-        st.subheader("분석 A: 가격 변동 상·하위 그룹의 평균 거래지수 변화 (2023=1)")
+        st.subheader("분석 A: 가격 변동 상·하위 그룹의 평균 거래지수 변화")
         st.caption(
             "개별 구의 절대 규모 차이를 제거하기 위해 2023=1로 정규화한 뒤, "
             "가격 변동 상·하위 그룹의 평균적인 거래량 반응(거래지수)을 비교"
@@ -221,7 +221,7 @@ with st.expander("추가분석: 가격 ↔ 거래량 선행 가능성(조건부 
                 "price_group": "가격 변동 그룹",
                 "count": "구 개수",
             },
-            title="가격 변동 상·하위 그룹의 평균 거래지수 변화 (2023=1 → 2025)"
+            title="가격 변동 상·하위 그룹의 평균 거래지수 변화 (2023 → 2025)"
         )
     
         fig_mean.update_layout(xaxis=dict(type="category"))
