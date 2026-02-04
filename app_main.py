@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 from scipy.stats import linregress, mannwhitneyu
 
-st.set_page_config(layout="wide", page_title="가격 상승률 vs 거래 변화 (통합 시각화)")
+st.set_page_config(layout="wide", page_title="가격 상승률 vs 거래 변화 시각화")
 
 # =========================
 # 0) 데이터 로드
